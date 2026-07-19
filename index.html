@@ -387,6 +387,35 @@
             color: #34d399 !important;
         }
 
+        /* Notification System Overrides */
+        body.dark-mode #notificationPanel {
+            background: #1e293b !important;
+            border-color: rgba(148, 163, 184, 0.1) !important;
+        }
+        body.dark-mode #notificationPanel > div:first-child {
+            background: rgba(15, 23, 42, 0.5) !important;
+            border-bottom-color: rgba(148, 163, 184, 0.1) !important;
+        }
+        body.dark-mode #notificationPanel h4 {
+            color: #f1f5f9 !important;
+        }
+        body.dark-mode #notificationList {
+            background: #1e293b !important;
+        }
+        body.dark-mode .notification-item {
+            background: rgba(255,255,255,0.05) !important;
+            border-color: rgba(255,255,255,0.05) !important;
+        }
+        body.dark-mode .notification-item:hover {
+            background: rgba(255,255,255,0.1) !important;
+        }
+        body.dark-mode .notification-msg {
+            color: #cbd5e1 !important;
+        }
+        body.dark-mode .notification-time {
+            color: #94a3b8 !important;
+        }
+
         /* Security Lock Overlay */
         .lock-overlay {
             position: fixed;
@@ -1043,15 +1072,35 @@
                             </svg>
                         </span>
                     </button>
-                    <button
-                        class="w-10 h-10 rounded-full bg-white border border-neutral-100 flex items-center justify-center text-neutral-500 hover:text-[#242424] hover:bg-neutral-50 transition shadow-sm relative">
-                        <span class="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-rose-500 rounded-full"></span>
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9">
-                            </path>
-                        </svg>
-                    </button>
+                    <div class="relative">
+                        <button id="notificationBtn" onclick="toggleNotificationPanel(event)"
+                            class="w-10 h-10 rounded-full bg-white border border-neutral-100 flex items-center justify-center text-neutral-500 hover:text-[#242424] hover:bg-neutral-50 transition shadow-sm relative">
+                            <span id="notification-dot" class="hidden absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-rose-500 rounded-full"></span>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9">
+                                </path>
+                            </svg>
+                        </button>
+
+                        <!-- Notification Panel Dropdown -->
+                        <div id="notificationPanel" class="hidden absolute right-0 top-12 w-72 bg-white rounded-[1.5rem] shadow-2xl border border-neutral-100 z-50 overflow-hidden opacity-0 transform scale-95 transition-all duration-200 origin-top-right flex flex-col">
+                            <div class="flex items-center justify-between px-5 py-4 border-b border-neutral-100/50 bg-neutral-50/50">
+                                <h4 class="text-xs font-extrabold text-[#242424]">Notifications</h4>
+                                <button onclick="clearNotifications(event)" class="text-neutral-400 hover:text-red-500 transition-colors" title="Clear All">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
+                            </div>
+                            <div id="notificationList" class="max-h-64 overflow-y-auto hide-scrollbar flex flex-col p-2 gap-1 bg-white">
+                                <!-- Notifications will be rendered here -->
+                            </div>
+                        </div>
+
+                        <!-- Push Notification Popup (anchored near the bell) -->
+                        <div id="pushNotificationPopup" class="absolute right-12 top-1.5 w-max max-w-[200px] bg-[#242424] text-white text-[10px] font-bold px-3 py-2 rounded-xl shadow-[0_8px_16px_rgba(0,0,0,0.1)] z-50 opacity-0 transform translate-x-4 transition-all duration-400 pointer-events-none flex items-center justify-center text-center">
+                            <span id="pushNotificationText"></span>
+                        </div>
+                    </div>
                     <div
                         class="h-10 w-10 rounded-full bg-neutral-200 border-2 border-white shadow-sm overflow-hidden ml-1 cursor-pointer">
                         <img src="https://ui-avatars.com/api/?name=Admin+User&background=242424&color=fff&font-size=0.35"
@@ -1707,6 +1756,29 @@
             const dateEl = document.getElementById('live-date');
             if (clockEl) clockEl.textContent = timeStr;
             if (dateEl) dateEl.textContent = dateStr;
+
+            // --- Notification Triggers ---
+            if (typeof triggerNotification === 'function') {
+                const hour = now.getHours();
+                const minute = now.getMinutes();
+                const day = now.getDay(); // 0 is Sunday
+                const dateOnly = now.toLocaleDateString();
+
+                // 1. 2-Hour Alert (Even hours at exactly 00 minute)
+                const currentHourId = dateOnly + '-' + hour;
+                if (hour % 2 === 0 && minute === 0 && window.lastNotifiedHour2 !== currentHourId) {
+                    triggerNotification('Please check No Stock Fabric 📩');
+                    window.lastNotifiedHour2 = currentHourId;
+                    localStorage.setItem('last_notified_hour_2', currentHourId);
+                }
+
+                // 2. 4:00 PM (16:00) Alert (Except Sunday)
+                if (hour === 16 && minute === 0 && day !== 0 && window.lastNotifiedDate16 !== dateOnly) {
+                    triggerNotification('Courier Packing 📦');
+                    window.lastNotifiedDate16 = dateOnly;
+                    localStorage.setItem('last_notified_date_16', dateOnly);
+                }
+            }
         }
 
         function animateCounter(element, target, duration = 800) {
@@ -2153,6 +2225,102 @@
                 e.stopPropagation();
             }
         }, true);
+
+        // --- Notification System ---
+        window.notifications = JSON.parse(localStorage.getItem('smart_dash_notifications') || '[]');
+        window.lastNotifiedHour2 = localStorage.getItem('last_notified_hour_2') || '';
+        window.lastNotifiedDate16 = localStorage.getItem('last_notified_date_16') || '';
+
+        function saveNotifications() {
+            localStorage.setItem('smart_dash_notifications', JSON.stringify(window.notifications));
+            updateNotificationUI();
+        }
+
+        function triggerNotification(msg) {
+            // Push alert popup
+            const popup = document.getElementById('pushNotificationPopup');
+            const popupText = document.getElementById('pushNotificationText');
+            if (popup && popupText) {
+                popupText.textContent = msg;
+                popup.classList.remove('hidden', 'opacity-0', 'translate-x-4', 'pointer-events-none');
+                setTimeout(() => {
+                    popup.classList.add('opacity-0', 'translate-x-4', 'pointer-events-none');
+                }, 5000);
+            }
+
+            // Add to stack
+            const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+            window.notifications.unshift({ msg, time: timeStr, id: Date.now() });
+            saveNotifications();
+        }
+
+        function updateNotificationUI() {
+            const dot = document.getElementById('notification-dot');
+            const list = document.getElementById('notificationList');
+            if (!dot || !list) return;
+            
+            if (window.notifications.length > 0) {
+                dot.classList.remove('hidden');
+            } else {
+                dot.classList.add('hidden');
+            }
+
+            if (window.notifications.length === 0) {
+                list.innerHTML = '<div class="text-center text-neutral-400 text-[10px] py-4">No new notifications</div>';
+                return;
+            }
+
+            list.innerHTML = window.notifications.map(n => `
+                <div class="notification-item flex justify-between items-start p-2 rounded-xl bg-neutral-50/50 border border-neutral-100 hover:bg-neutral-100/50 transition-colors">
+                    <span class="notification-msg text-[11px] font-bold text-[#242424] leading-tight flex-1 pr-2">${n.msg}</span>
+                    <span class="notification-time text-[9px] font-bold text-neutral-400 whitespace-nowrap mt-0.5">${n.time}</span>
+                </div>
+            `).join('');
+        }
+
+        function toggleNotificationPanel(e) {
+            e.stopPropagation();
+            const panel = document.getElementById('notificationPanel');
+            if (panel.classList.contains('hidden') || panel.classList.contains('opacity-0')) {
+                panel.classList.remove('hidden');
+                // trigger reflow
+                void panel.offsetWidth;
+                panel.classList.remove('opacity-0', 'scale-95', 'pointer-events-none');
+            } else {
+                closeNotificationPanel();
+            }
+        }
+
+        function closeNotificationPanel() {
+            const panel = document.getElementById('notificationPanel');
+            if(panel) {
+                panel.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
+                setTimeout(() => {
+                    panel.classList.add('hidden');
+                }, 200);
+            }
+        }
+
+        function clearNotifications(e) {
+            e.stopPropagation();
+            window.notifications = [];
+            saveNotifications();
+            closeNotificationPanel();
+        }
+
+        // Click outside to close notification panel
+        document.addEventListener('click', function(e) {
+            const panel = document.getElementById('notificationPanel');
+            const btn = document.getElementById('notificationBtn');
+            if (panel && !panel.classList.contains('hidden') && !panel.contains(e.target) && (!btn || !btn.contains(e.target))) {
+                closeNotificationPanel();
+            }
+        });
+
+        // Initialize UI on load
+        document.addEventListener('DOMContentLoaded', () => {
+            updateNotificationUI();
+        });
 
         // Initialize dynamic elements on load
         window.onload = function () {
