@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            opacity: 0;
+            animation: pageEnter 0.4s ease-out 0.05s forwards;
+        }
+
+        @keyframes pageEnter {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        body.page-exit {
+            animation: pageExit 0.25s ease-in forwards;
+        }
+
+        @keyframes pageExit {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-10px); }
+        }    -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Smooth background gradient matching the Crextio aesthetic */
+        .theme-bg {
+            background: linear-gradient(135deg, #fefbf6 0%, #fdf5e1 50%, #fae5ac 100%);
+        }
+
+        .dashboard-container {
+            background: rgba(255, 255, 255, 0.4);
+            box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        /* Bento Box Animations & Base Styles */
+        .bento-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: transform, opacity;
+            opacity: 0;
+            animation: fadeSlideUp 0.5s ease-out forwards;
+        }
+        .bento-card:nth-child(1) { animation-delay: 0.15s; }
+        .bento-card:nth-child(2) { animation-delay: 0.25s; }
+        .bento-card:nth-child(3) { animation-delay: 0.3s; }
+        .bento-card:nth-child(4) { animation-delay: 0.4s; }
+        .bento-card:nth-child(5) { animation-delay: 0.5s; }
+        .bento-card:nth-child(6) { animation-delay: 0.6s; }
+        .bento-card:nth-child(7) { animation-delay: 0.7s; }
+        .bento-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.06);
+        }
+
+        @keyframes fadeSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(24px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .bento-dark:hover {
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Glassmorphism specifically for the Barcode Routine block */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.45);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+        }
+
+        /* Pill Navigation */
+        .pill-nav-active {
+            background: #242424;
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .pill-nav {
+            color: #525252;
+            transition: all 0.2s;
+        }
+        .pill-nav:hover {
+            background: rgba(36, 36, 36, 0.05);
+            color: #242424;
+        }
+
+        /* Custom Scrollbar for internal widgets */
+        ::-webkit-scrollbar {
+            height: 6px;
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d4d4d8; 
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a1a1aa; 
+        }
+
+        /* Task Management Modal Styles */
+        .modal-overlay {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .task-item-hover:hover {
+            background: rgba(244, 199, 74, 0.1);
+        }
+
+        .action-btn {
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .task-item:hover .action-btn {
+            opacity: 1;
+        }
+
+        /* Dark Theme Styles */
+        body.dark-mode {
+            color-scheme: dark;
+            color: #f1f5f9 !important;
+        }
+
+        body.dark-mode .theme-bg {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+        }
+
+        body.dark-mode .dashboard-container {
+            background: rgba(30, 41, 59, 0.6);
+            border-color: rgba(148, 163, 184, 0.3);
+        }
+
+        body.dark-mode .text-\[#242424\] {
+            color: #f1f5f9 !important;
+        }
+
+        body.dark-mode h1,
+        body.dark-mode h2,
+        body.dark-mode h3,
+        body.dark-mode h4,
+        body.dark-mode h5,
+        body.dark-mode h6 {
+            color: #f1f5f9 !important;
+        }
+
+        body.dark-mode .bg-white {
+            background: #1e293b;
+            color: #f1f5f9;
+        }
+
+        body.dark-mode .text-neutral-500 {
+            color: #cbd5e1 !important;
+        }
+
+        body.dark-mode .text-neutral-400 {
+            color: #e2e8f0 !important;
+        }
+
+        body.dark-mode .text-neutral-600 {
+            color: #cbd5e1 !important;
+        }
+
+        body.dark-mode .text-neutral-700 {
+            color: #e2e8f0 !important;
+        }
+
+        body.dark-mode .bg-neutral-50,
+        body.dark-mode .hover\:bg-neutral-50:hover {
+            background: #1e293b;
+        }
+
+        body.dark-mode .bg-neutral-100,
+        body.dark-mode .border-neutral-100 {
+            background: #334155;
+            border-color: #475569;
+        }
+
+        body.dark-mode .border-neutral-300,
+        body.dark-mode .bg-neutral-300 {
+            border-color: #475569;
+            background: #475569;
+        }
+
+        body.dark-mode .bg-neutral-200 {
+            background: #334155;
+        }
+
+        body.dark-mode .border-white {
+            border-color: #334155;
+        }
+
+        body.dark-mode .shadow-sm {
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        body.dark-mode .bento-dark {
+            background: #0f172a !important;
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5) !important;
+        }
+
+        body.dark-mode .bg-\[#242424\] {
+            background: #0f172a !important;
+        }
+
+        body.dark-mode .text-\[#1a1a1a\] {
+            color: #f1f5f9 !important;
+        }
+
+        body.dark-mode .bento-card {
+            background: #1e293b;
+            color: #f1f5f9;
+        }
+
+        body.dark-mode .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            border-color: rgba(148, 163, 184, 0.2);
+        }
+
+        body.dark-mode .pill-nav-active {
+            background: #f1f5f9;
+            color: #0f172a;
+        }
+
+        body.dark-mode .pill-nav {
+            color: #cbd5e1 !important;
+        }
+
+        body.dark-mode .pill-nav:hover {
+            background: rgba(148, 163, 184, 0.1);
+            color: #f1f5f9;
+        }
+
+        body.dark-mode .bg-white\/60 {
+            background: rgba(30, 41, 59, 0.6);
+        }
+
+        body.dark-mode input,
+        body.dark-mode textarea {
+            background: #0f172a;
+            color: #f1f5f9;
+            border-color: #475569;
+        }
+
+        body.dark-mode input:focus,
+        body.dark-mode textarea:focus {
+            border-color: #64748b;
+        }
+
+        body.dark-mode .modal-overlay {
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        body.dark-mode .modal-content {
+            background: #1e293b;
+            color: #f1f5f9;
+        }
+
+        /* Security Lock Overlay */
+        .lock-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .lock-modal {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 3rem;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 400px;
+        }
+
+        body.dark-mode .lock-modal {
+            background: #1e293b;
+            color: #f1f5f9;
+        }
+
+        .lock-icon {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.05); }
+        }
+
+        .lock-modal h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: #242424;
+        }
+
+        body.dark-mode .lock-modal h2 {
+            color: #f1f5f9;
+        }
+
+        .lock-modal p {
+            font-size: 0.875rem;
+            color: #666;
+            margin-bottom: 1.5rem;
+        }
+
+        body.dark-mode .lock-modal p {
+            color: #cbd5e1;
+        }
+
+        .unlock-btn {
+            background: #f4c74a;
+            color: #242424;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s;
+        }
+
+        .unlock-btn:hover {
+            background: #ca9e2b;
+            transform: translateY(-2px);
+        }
+
+        body.dark-mode .task-item {
+            color: #f1f5f9 !important;
+        }
+
+        body.dark-mode .task-item h4 {
+            color: #f1f5f9 !important;
+        }
+
+        body.dark-mode .text-\[10px\] {
+            color: #cbd5e1 !important;
+        }
+
+        body.dark-mode .uppercase {
+            color: #cbd5e1 !important;
+        }
+
+        body.dark-mode .text-white {
+            color: #f1f5f9 !important;
+        }
+
+        body.dark-mode .bg-white\/10 {
+            background: rgba(241, 245, 249, 0.15) !important;
+        }
+
+        body.dark-mode .bg-white\/20 {
+            background: rgba(241, 245, 249, 0.2) !important;
+        }
+
+        body.dark-mode .text-amber-950 {
+            color: #f1f5f9 !important;
+        }
+
+        /* Fix all text-[#242424] elements in dark mode */
+        body.dark-mode .text-\[#242424\] {
+            color: #f1f5f9 !important;
+        }
+
+        body.dark-mode .hover\:text-\[#242424\]:hover {
+            color: #cbd5e1 !important;
+        }
+
+        body.dark-mode .text-\[#1a1a1a\] {
+            color: #f1f5f9 !important;
+        }
+
+        /* SVG icon colors in dark mode */
+        body.dark-mode svg {
+            color: #f1f5f9 !important;
+        }
+
+        body.dark-mode .text-neutral-400 svg {
+            color: #cbd5e1 !important;
+        }
+
+        body.dark-mode .text-neutral-600 svg {
+            color: #cbd5e1 !important;
+        }
+
+        /* Specific SVG icon fixes */
+        body.dark-mode .text-neutral-600 {
+            color: #cbd5e1 !important;
+        }
+
+        /* Card titles and content */
+        body.dark-mode .font-extrabold {
+            color: #f1f5f9 !important;
+        }
+
+        body.dark-mode .text-lg {
+            color: #f1f5f9 !important;
+        }
+
+        body.dark-mode .text-3xl,
+        body.dark-mode .text-4xl {
+            color: #f1f5f9 !important;
+        }
+
+        /* Barcode Routine specific fixes */
+        body.dark-mode .glass-card .text-lg,
+        body.dark-mode .bento-dark .text-lg {
+            color: #f1f5f9 !important;
+        }
+
+        /* Store routine and other cards */
+        body.dark-mode .bg-white .text-lg {
+            color: #f1f5f9 !important;
+        }
+
+        body.dark-mode .bg-white .text-3xl {
+            color: #f1f5f9 !important;
+        }
+
+        /* Quotation and other yellow cards */
+        body.dark-mode .bg-\[#f4c74a\] {
+            background: #d4a043 !important;
+        }
+
+        body.dark-mode .text-\[#242424\] {
+            color: #f1f5f9 !important;
+        }
+
+        body.dark-mode .text-amber-950\/70 {
+            color: #cbd5e1 !important;
+        }
+
+        /* Badge/label text in dark mode */
+        body.dark-mode .bg-\[#f4c74a\] .text-\[#242424\] {
+            color: #0f172a !important;
+        }
+
+        /* Icon stroke colors */
+        body.dark-mode [fill="none"] {
+            stroke: #f1f5f9 !important;
+        }
+
+        body.dark-mode .group\/item [fill="none"] {
+            stroke: #f1f5f9 !important;
+        }
+
+        /* Task item specific */
+        body.dark-mode .task-item svg {
+            stroke: #f1f5f9 !important;
+        }
+
+        body.dark-mode .task-item .text-xs {
+            color: #f1f5f9 !important;
+        }
+
+        /* Ensure all headings are visible */
+        body.dark-mode h1,
+        body.dark-mode h2,
+        body.dark-mode h3,
+        body.dark-mode h4,
+        body.dark-mode h5,
+        body.dark-mode h6 {
+            color: #f1f5f9 !important;
+        }
+
+        /* Action buttons text */
+        body.dark-mode .hover\:text-\[#f4c74a\]:hover {
+            color: #f4c74a !important;
+        }
+
+        body.dark-mode .hover\:text-red-400:hover {
+            color: #f87171 !important;
+        }
+
+        /* Button icon visibility in dark mode */
+        body.dark-mode .w-10.h-10 svg {
+            stroke: #94a3b8 !important;
+        }
+
+        body.dark-mode .w-10.h-10:hover svg {
+            stroke: #f1f5f9 !important;
+        }
+
+        body.dark-mode .w-4.h-4 svg,
+        body.dark-mode .w-5.h-5 svg {
+            stroke: #f1f5f9 !important;
+        }
+
+        /* Modal close button */
+        body.dark-mode .modal-content svg {
+            stroke: #cbd5e1 !important;
+        }
+
+        /* Info text and descriptions */
+        body.dark-mode p {
+            color: #cbd5e1 !important;
+        }
+
+        body.dark-mode .leading-relaxed {
+            color: #cbd5e1 !important;
+        }
+
+        /* Buttons in dark mode */
+        body.dark-mode button {
+            color: #cbd5e1 !important;
+        }
+
+        body.dark-mode button:hover {
+            color: #f1f5f9 !important;
+        }
+
+        /* White background cards converted for dark mode */
+        body.dark-mode .bg-white.rounded-\[2rem\] {
+            background: #1e293b !important;
+        }
+
+        body.dark-mode .bg-white.rounded-\[2rem\] .text-\[#242424\],
+        body.dark-mode .bg-white.rounded-\[2rem\] .text-lg,
+        body.dark-mode .bg-white.rounded-\[2rem\] .text-3xl {
+            color: #f1f5f9 !important;
+        }
+
+        /* Ensure all text in bento cards is visible */
+        body.dark-mode .bento-card * {
+            color: #f1f5f9 !important;
+        }
+
+        body.dark-mode .bento-card .text-neutral-500,
+        body.dark-mode .bento-card .text-neutral-400,
+        body.dark-mode .bento-card .text-neutral-600 {
+            color: #cbd5e1 !important;
+        }
+
+        /* Action icons visibility */
+        body.dark-mode .action-btn svg {
+            stroke: #f1f5f9 !important;
+        }
+
+        body.dark-mode .action-btn:hover svg {
+            stroke: #f4c74a !important;
+        }
+
+        /* Fix white card backgrounds in dark mode */
+        body.dark-mode .bg-white.rounded-\[2rem\] {
+            background: #1e293b !important;
+            border: 1px solid #334155 !important;
+        }
+
+        body.dark-mode .bg-white.rounded-\[2rem\] .text-\[#242424\],
+        body.dark-mode .bg-white.rounded-\[2rem\] .text-lg,
+        body.dark-mode .bg-white.rounded-\[2rem\] .text-3xl,
+        body.dark-mode .bg-white.rounded-\[2rem\] .text-xs {
+            color: #f1f5f9 !important;
+        }
+
+        body.dark-mode .bg-white.rounded-\[2rem\] .text-neutral-400 {
+            color: #cbd5e1 !important;
+        }
+
+        /* Fix icon containers in white cards */
+        body.dark-mode .bg-neutral-50 {
+            background: #334155 !important;
+        }
+
+        body.dark-mode .border-neutral-100 {
+            border-color: #475569 !important;
+        }
+
+        /* Quotation Generator card dark mode */
+        body.dark-mode .bg-\[#f4c74a\] {
+            background: #ca9e2b !important;
+            box-shadow: 0 4px 15px rgba(202, 158, 43, 0.2) !important;
+        }
+
+        body.dark-mode .bg-\[#f4c74a\] .text-\[#242424\],
+        body.dark-mode .bg-\[#f4c74a\] .text-amber-950 {
+            color: #0f172a !important;
+        }
+
+        body.dark-mode .bg-\[#f4c74a\] .text-amber-950\/70 {
+            color: rgba(15, 23, 42, 0.7) !important;
+        }
+
+        body.dark-mode .bg-\[#f4c74a\] .bg-white\/40 {
+            background: rgba(15, 23, 42, 0.15) !important;
+        }
+
+        body.dark-mode .bg-\[#f4c74a\] svg {
+            stroke: #0f172a !important;
+        }
+
+        /* Theme Toggle Button */
+        .theme-toggle {
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            transform: rotate(20deg);
+        }
+
+        .sun-icon,
+        .moon-icon {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sun-icon {
+            opacity: 1;
+            transform: rotate(0deg);
+            transition: all 0.3s ease;
+        }
+
+        body.dark-mode .sun-icon {
+            opacity: 0;
+            transform: rotate(180deg);
+        }
+
+        .moon-icon {
+            opacity: 0;
+            transform: rotate(180deg);
+            transition: all 0.3s ease;
+        }
+
+        body.dark-mode .moon-icon {
+            opacity: 1;
+            transform: rotate(0deg);
+        }
+
+        /* Smooth Theme Transition */
+        body, .theme-bg, .dashboard-container, .glass-card,
+        .pill-nav-active, .pill-nav, .modal-content, .lock-modal {
+            transition: background-color 0.4s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        /* Toast Notification System */
+        .toast-container {
+            position: fixed;
+            top: 1.5rem;
+            right: 1.5rem;
+            z-index: 9998;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            pointer-events: none;
+        }
+
+        .toast {
+            pointer-events: auto;
+            padding: 0.875rem 1.25rem;
+            border-radius: 1rem;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+            animation: toastIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            max-width: 360px;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .toast-info { background: rgba(36, 36, 36, 0.92); color: #fff; }
+        .toast-success { background: rgba(16, 185, 129, 0.92); color: #fff; }
+        .toast-warning { background: rgba(244, 199, 74, 0.95); color: #242424; }
+        .toast-exit { animation: toastOut 0.3s ease-in forwards; }
+
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(100%) scale(0.9); }
+            to { opacity: 1; transform: translateX(0) scale(1); }
+        }
+
+        @keyframes toastOut {
+            from { opacity: 1; transform: translateX(0) scale(1); }
+            to { opacity: 0; transform: translateX(100%) scale(0.9); }
+        }
+
+        body.dark-mode .toast-info {
+            background: rgba(30, 41, 59, 0.95);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+
+        body.dark-mode .toast-warning { background: rgba(202, 158, 43, 0.95); }
+
+        /* Checkbox Pulse */
+        @keyframes checkPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+        .check-pulse { animation: checkPulse 0.3s ease-out; }
+
+        /* Task completion flash */
+        @keyframes taskComplete {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; background: rgba(244, 199, 74, 0.15); }
+            100% { opacity: 1; }
+        }
+        .task-completing { animation: taskComplete 0.4s ease-out; }
+
+        /* Mobile: show action buttons on touch devices */
+        @media (hover: none) {
+            .action-btn { opacity: 0.7 !important; }
+        }
+
+        /* Clock dark mode */
+        body.dark-mode #live-clock { color: #f1f5f9 !important; }
+        body.dark-mode #live-date { color: #cbd5e1 !important; }
+
+        /* Hide scrollbar utility */
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Focus visible for accessibility */
+        :focus-visible { outline: 2px solid #f4c74a; outline-offset: 2px; }
+    </style>
+</head>
+<body class="py-4 sm:py-6 px-2 sm:px-4 md:px-6 theme-bg min-h-screen text-[#242424]">
+
+    <div class="max-w-[1440px] mx-auto relative">
+        
+        <!-- App Window Container -->
+        <div class="dashboard-container rounded-[2.5rem] sm:rounded-[3rem] p-4 sm:p-8 md:p-10 border border-white/60 min-h-[92vh] flex flex-col">
+            
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-6 w-full">
+                
+                <!-- Logo & Brand -->
+                <div class="flex items-center gap-3 bg-white px-5 py-2.5 rounded-full shadow-sm border border-neutral-100/50">
+                    <div class="w-8 h-8 rounded-full bg-[#f4c74a] flex items-center justify-center text-[#242424] font-extrabold text-sm shadow-inner">
+                        PNR
+                    </div>
+                    <span class="font-extrabold text-lg tracking-tight">Manager</span>
+                </div>
+
+                <!-- Center Pill Navigation -->
+                <div class="flex items-center overflow-x-auto w-full lg:w-auto bg-white/60 backdrop-blur-md p-1.5 rounded-full border border-white shadow-[0_4px_20px_rgba(0,0,0,0.02)] hide-scrollbar">
+                    <button class="pill-nav-active px-6 py-2 rounded-full text-xs font-bold whitespace-nowrap">Dashboard</button>
+                    <button class="pill-nav px-6 py-2 rounded-full text-xs font-bold whitespace-nowrap" onclick="navigateTo('tools')">Tools</button>
+                    <button class="pill-nav px-6 py-2 rounded-full text-xs font-bold whitespace-nowrap" onclick="navigateTo('reports')">Reports</button>
+                    <button class="pill-nav px-6 py-2 rounded-full text-xs font-bold whitespace-nowrap" onclick="navigateTo('calendar')">Calendar</button>
+                    <a href="dsrmaker.html" class="pill-nav px-6 py-2 rounded-full text-xs font-bold whitespace-nowrap">DSR Maker</a>
+                    <a href="quotationMaker.html" class="pill-nav px-6 py-2 rounded-full text-xs font-bold whitespace-nowrap">Quotation</a>
+                    <a href="gcMaker.html" class="pill-nav px-6 py-2 rounded-full text-xs font-bold whitespace-nowrap">Global Count</a>
+                    <a href="knockoffMaker.html" class="pill-nav px-6 py-2 rounded-full text-xs font-bold whitespace-nowrap">Knockoff</a>
+                </div>
+
+                <!-- Right Action Icons & Profile -->
+                <div class="flex items-center gap-2">
+                    <div class="hidden sm:flex flex-col items-end mr-2">
+                        <span id="live-clock" class="text-xs font-bold text-[#242424] tabular-nums tracking-tight">--:-- --</span>
+                        <span id="live-date" class="text-[9px] font-bold text-neutral-400 uppercase tracking-widest">---</span>
+                    </div>
+                    <button class="w-10 h-10 rounded-full bg-white border border-neutral-100 flex items-center justify-center text-neutral-500 hover:text-[#242424] hover:bg-neutral-50 transition shadow-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    </button>
+                    <button onclick="toggleTheme()" class="w-10 h-10 rounded-full bg-white border border-neutral-100 flex items-center justify-center text-neutral-500 hover:text-[#242424] hover:bg-neutral-50 transition shadow-sm theme-toggle relative" title="Toggle Theme">
+                        <span class="sun-icon">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1m-16 0H1m15.364 1.636l.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                        </span>
+                        <span class="moon-icon">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                        </span>
+                    </button>
+                    <button class="w-10 h-10 rounded-full bg-white border border-neutral-100 flex items-center justify-center text-neutral-500 hover:text-[#242424] hover:bg-neutral-50 transition shadow-sm relative">
+                        <span class="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-rose-500 rounded-full"></span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                    </button>
+                    <div class="h-10 w-10 rounded-full bg-neutral-200 border-2 border-white shadow-sm overflow-hidden ml-1 cursor-pointer">
+                        <img src="https://ui-avatars.com/api/?name=Admin+User&background=242424&color=fff&font-size=0.35" alt="User" class="w-full h-full object-cover">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-8 flex flex-col xl:flex-row justify-between items-start xl:items-end gap-8">
+                <div>
+                    <h1 id="greeting-text" class="text-4xl sm:text-[2.75rem] font-light text-[#1a1a1a] tracking-tight mb-3">
+                        Welcome in, <span class="font-bold">Manager</span>
+                    </h1>
+                    
+                    <!-- Mini progress bars imitating the Crextio sub-header -->
+                    <div class="flex flex-wrap items-center gap-4 sm:gap-6 mt-4">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Tasks</span>
+                            <div class="w-16 h-6 rounded-full bg-[#242424] flex items-center px-2">
+                                <span class="text-[9px] font-bold text-white" id="tasks-percentage">45%</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Reports</span>
+                            <div class="w-16 h-6 rounded-full bg-[#f4c74a] flex items-center px-2">
+                                <span class="text-[9px] font-bold text-[#242424]">82%</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Sync</span>
+                            <div class="w-20 h-6 rounded-full border border-neutral-300 flex items-center px-2 bg-white/50">
+                                <span class="text-[9px] font-bold text-neutral-500">100%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- KPI large numbers -->
+                <div class="flex items-center gap-8 sm:gap-12">
+                    <div class="text-left sm:text-right">
+                        <div class="flex items-center gap-2 sm:justify-end mb-1 text-neutral-500">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                            <h3 id="kpi-pending" class="text-4xl font-light text-[#242424] tracking-tight">12</h3>
+                        </div>
+                        <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Pending</span>
+                    </div>
+                    <div class="text-left sm:text-right">
+                        <div class="flex items-center gap-2 sm:justify-end mb-1 text-neutral-500">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            <h3 id="kpi-completed" class="text-4xl font-light text-[#242424] tracking-tight">84</h3>
+                        </div>
+                        <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Completed</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 flex-grow">
+                
+                <!-- TOOL 7: Glass Window Block (Barcode Scanning Routine) -->
+                <div class="bento-card glass-card rounded-[2rem] p-6 flex flex-col relative overflow-hidden group col-span-1">
+                    <div class="flex justify-between items-start mb-5">
+                        <h3 class="text-lg font-extrabold text-[#242424]">Barcode Routine</h3>
+                        <div class="w-8 h-8 rounded-full bg-white/40 flex items-center justify-center">
+                            <svg class="w-4 h-4 text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
+                        </div>
+                    </div>
+                    
+                    <p class="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-4">July 2026 Schedule</p>
+                    
+                    <div id="barcode-routine-list" class="flex flex-col gap-3 flex-grow relative z-10">
+                        <!-- Items injected via JS to dynamically highlight today -->
+                    </div>
+                </div>
+
+                <!-- TOOL 2: Store Routine Schedule Chart (Mimicking Crextio's Progress block) -->
+                <div onclick="navigateTo('schedule')" class="bento-card cursor-pointer bg-white rounded-[2rem] p-6 flex flex-col justify-between shadow-sm relative overflow-hidden group col-span-1 lg:col-span-2">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="text-lg font-extrabold text-[#242424] mb-1">Store Routine</h3>
+                            <div class="flex items-baseline gap-2">
+                                <span class="text-3xl font-light text-[#242424]">Week 2</span>
+                                <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Active</span>
+                            </div>
+                        </div>
+                        <div class="w-8 h-8 rounded-full bg-neutral-50 flex items-center justify-center group-hover:bg-[#f4c74a] transition-colors">
+                            <svg class="w-3.5 h-3.5 text-[#242424]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                        </div>
+                    </div>
+                    
+                    <!-- Decorative Chart Elements -->
+                    <div class="flex-grow flex items-end justify-between py-6 gap-2 px-2">
+                        <!-- Mon -->
+                        <div class="flex flex-col items-center gap-3 group/bar w-full">
+                            <div class="w-1.5 bg-neutral-200 rounded-full h-12 relative group-hover/bar:bg-[#f4c74a] transition-colors"></div>
+                            <span class="text-[10px] font-bold text-neutral-400">M</span>
+                        </div>
+                        <!-- Tue -->
+                        <div class="flex flex-col items-center gap-3 group/bar w-full">
+                            <div class="w-1.5 bg-neutral-200 rounded-full h-20 relative group-hover/bar:bg-[#f4c74a] transition-colors"></div>
+                            <span class="text-[10px] font-bold text-neutral-400">T</span>
+                        </div>
+                        <!-- Wed (Active mimicking Image) -->
+                        <div class="flex flex-col items-center gap-3 group/bar w-full relative">
+                            <div class="absolute -top-8 bg-[#f4c74a] text-[#242424] text-[9px] font-bold px-2 py-1 rounded-md shadow-sm whitespace-nowrap">Audit Day</div>
+                            <div class="w-2.5 bg-[#f4c74a] rounded-full h-24 relative shadow-[0_0_12px_rgba(244,199,74,0.6)]"></div>
+                            <span class="text-[10px] font-bold text-[#242424]">W</span>
+                        </div>
+                        <!-- Thu -->
+                        <div class="flex flex-col items-center gap-3 group/bar w-full">
+                            <div class="w-1.5 bg-neutral-200 rounded-full h-16 relative group-hover/bar:bg-[#f4c74a] transition-colors"></div>
+                            <span class="text-[10px] font-bold text-neutral-400">T</span>
+                        </div>
+                        <!-- Fri -->
+                        <div class="flex flex-col items-center gap-3 group/bar w-full">
+                            <div class="w-1.5 bg-neutral-200 rounded-full h-10 relative group-hover/bar:bg-[#f4c74a] transition-colors"></div>
+                            <span class="text-[10px] font-bold text-neutral-400">F</span>
+                        </div>
+                        <!-- Sat -->
+                        <div class="flex flex-col items-center gap-3 group/bar w-full">
+                            <div class="w-1.5 bg-neutral-200 rounded-full h-8 relative group-hover/bar:bg-[#f4c74a] transition-colors"></div>
+                            <span class="text-[10px] font-bold text-neutral-400">S</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TOOL 3: Daily Tasks (Charcoal Dark Card matching Onboarding Task in Crextio) -->
+                <div class="bento-card bento-dark bg-[#242424] rounded-[2rem] p-6 flex flex-col shadow-xl shadow-neutral-900/10 relative overflow-hidden group col-span-1 lg:row-span-2">
+                    <div class="absolute -right-8 -top-8 w-32 h-32 bg-white/5 rounded-full blur-2xl pointer-events-none"></div>
+                    
+                    <div class="flex justify-between items-start mb-6 relative z-10">
+                        <h3 class="text-lg font-extrabold text-white">Daily Tasks</h3>
+                        <span class="text-2xl font-light text-white"><span id="completed-count">0</span><span class="text-neutral-500 text-lg" id="total-count">/4</span></span>
+                    </div>
+                    
+                    <div class="flex-grow flex flex-col gap-3 relative z-10" id="tasks-container">
+                        <!-- Tasks rendered here -->
+                    </div>
+
+                    <!-- Add Task Button -->
+                    <button onclick="openAddTaskModal()" class="mt-4 w-full py-2 px-4 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-colors border border-white/20">
+                        + Add Task
+                    </button>
+                </div>
+
+                <!-- Task Management Modal -->
+                <div id="taskModal" class="hidden fixed inset-0 flex items-end sm:items-center justify-center z-50 modal-overlay">
+                    <div class="modal-content bg-white rounded-2xl shadow-2xl w-full sm:max-w-md m-4">
+                        <div class="p-6">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-lg font-bold" id="modalTitle">Add New Task</h3>
+                                <button onclick="closeTaskModal()" class="text-neutral-500 hover:text-neutral-700">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                </button>
+                            </div>
+
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-semibold text-neutral-700 mb-2">Task Name</label>
+                                    <input type="text" id="taskName" class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#242424]" placeholder="Enter task name">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-neutral-700 mb-2">Time</label>
+                                    <input type="time" id="taskTime" class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#242424]">
+                                </div>
+                            </div>
+
+                            <div class="flex gap-3 mt-6">
+                                <button onclick="closeTaskModal()" class="flex-1 py-2 px-4 rounded-lg border border-neutral-300 text-neutral-700 font-semibold hover:bg-neutral-50 transition-colors">
+                                    Cancel
+                                </button>
+                                <button onclick="saveTask()" class="flex-1 py-2 px-4 rounded-lg bg-[#242424] text-white font-semibold hover:bg-neutral-800 transition-colors">
+                                    Save Task
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                
+                <!-- TOOL 6: Quotation Generator (Yellow Theme, highly visible) -->
+                <div onclick="window.location.href='quotationMaker.html'" class="bento-card cursor-pointer bg-[#f4c74a] rounded-[2rem] p-6 flex flex-col justify-between shadow-md shadow-amber-500/20 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 p-6 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <svg class="w-4 h-4 text-[#242424]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                    </div>
+                    <div>
+                        <div class="w-12 h-12 bg-white/40 rounded-full flex items-center justify-center mb-4">
+                            <svg class="w-5 h-5 text-amber-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        </div>
+                        <h3 class="text-lg font-extrabold text-[#242424] mb-1">Quotation Generator</h3>
+                        <p class="text-xs font-semibold text-amber-950/70 leading-relaxed">Create tailored garment quotes.</p>
+                    </div>
+                </div>
+
+                <!-- TOOL 1: Global Count Maker -->
+                <div onclick="navigateTo('global-count')" class="bento-card cursor-pointer bg-white rounded-[2rem] p-6 flex flex-col justify-between shadow-sm relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 p-6 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <svg class="w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                    </div>
+                    <div>
+                        <div class="w-12 h-12 bg-neutral-50 rounded-full flex items-center justify-center mb-4 border border-neutral-100">
+                            <svg class="w-5 h-5 text-[#242424]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
+                        </div>
+                        <h3 class="text-lg font-extrabold text-[#242424] mb-1">Global Count</h3>
+                        <p class="text-xs font-semibold text-neutral-400 leading-relaxed">Compile raw stock report data.</p>
+                    </div>
+                </div>
+
+                <!-- TOOL 4: DSR Report Maker -->
+                <div onclick="window.location.href='dsrmaker.html'" class="bento-card cursor-pointer bg-white rounded-[2rem] p-6 flex flex-col justify-between shadow-sm relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 p-6 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <svg class="w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                    </div>
+                    <div>
+                        <div class="w-12 h-12 bg-neutral-50 rounded-full flex items-center justify-center mb-4 border border-neutral-100">
+                            <svg class="w-5 h-5 text-[#242424]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                        </div>
+                        <h3 class="text-lg font-extrabold text-[#242424] mb-1">DSR Maker</h3>
+                        <p class="text-xs font-semibold text-neutral-400 leading-relaxed">Daily Sales Report formatter.</p>
+                    </div>
+                </div>
+                <!-- TOOL 8: Knockoff System -->
+                <div onclick="window.location.href='knockoffMaker.html'" class="bento-card cursor-pointer bg-white rounded-[2rem] p-6 flex flex-col justify-between shadow-sm relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 p-6 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <svg class="w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                    </div>
+                    <div>
+                        <div class="w-12 h-12 bg-neutral-50 rounded-full flex items-center justify-center mb-4 border border-neutral-100">
+                            <svg class="w-5 h-5 text-[#242424]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                        </div>
+                        <h3 class="text-lg font-extrabold text-[#242424] mb-1">Knockoff System</h3>
+                        <p class="text-xs font-semibold text-neutral-400 leading-relaxed">Sales Order Reconciliation.</p>
+                    </div>
+                </div>
+                
+                <!-- TOOL 5: Smartsheet Tracker -->
+                <div onclick="navigateTo('smartsheet')" class="bento-card cursor-pointer bg-white rounded-[2rem] p-6 flex flex-col justify-between shadow-sm relative overflow-hidden group xl:col-span-1">
+                    <div>
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="w-12 h-12 bg-neutral-50 rounded-full flex items-center justify-center border border-neutral-100">
+                                <svg class="w-5 h-5 text-[#242424]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                            </div>
+                            <span class="text-[9px] font-bold bg-[#f4c74a] text-[#242424] px-2 py-1 rounded-md">Sync Active</span>
+                        </div>
+                        <h3 class="text-lg font-extrabold text-[#242424] mb-1">Smartsheet DB</h3>
+                        <p class="text-xs font-semibold text-neutral-400 leading-relaxed">Centralized sync tracking.</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        
+        <div class="mt-6 text-center text-neutral-400 text-[10px] font-extrabold uppercase tracking-widest">
+            Manager &copy; 2026
+        </div>
+    </div>
+
+    <!-- Session Lock Modal -->
+    <div id="lockOverlay" class="lock-overlay hidden">
+        <div class="lock-modal">
+            <div class="lock-icon">🔒</div>
+            <h2>Session Locked</h2>
+            <p>Your session has been locked due to inactivity. Click below to unlock and continue.</p>
+            <button onclick="unlockSession()" class="unlock-btn">Unlock Session</button>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script>
+        // --- 0. Utility Functions ---
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function debounce(fn, delay) {
+            let timer;
+            return function(...args) {
+                clearTimeout(timer);
+                timer = setTimeout(() => fn.apply(this, args), delay);
+            };
+        }
+
+        function safeGetItem(key) {
+            try { return localStorage.getItem(key); }
+            catch (e) { console.warn('localStorage unavailable:', e); return null; }
+        }
+
+        function safeSetItem(key, value) {
+            try { localStorage.setItem(key, value); }
+            catch (e) { console.warn('localStorage unavailable:', e); }
+        }
+
+        function showToast(message, type = 'info', duration = 3000) {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const icons = { info: '💡', success: '✅', warning: '⚠️', error: '❌' };
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `<span>${icons[type] || '💡'}</span><span>${escapeHtml(message)}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('toast-exit');
+                toast.addEventListener('animationend', () => toast.remove());
+            }, duration);
+        }
+
+        function updateGreeting() {
+            const hour = new Date().getHours();
+            let greeting;
+            if (hour < 12) greeting = 'Good Morning';
+            else if (hour < 17) greeting = 'Good Afternoon';
+            else greeting = 'Good Evening';
+            const el = document.getElementById('greeting-text');
+            if (el) el.innerHTML = `${greeting}, <span class="font-bold">Manager</span>`;
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+            const dateStr = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+            const clockEl = document.getElementById('live-clock');
+            const dateEl = document.getElementById('live-date');
+            if (clockEl) clockEl.textContent = timeStr;
+            if (dateEl) dateEl.textContent = dateStr;
+        }
+
+        function animateCounter(element, target, duration = 800) {
+            const startTime = performance.now();
+            function step(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const eased = 1 - Math.pow(1 - progress, 3);
+                element.textContent = Math.round(eased * target);
+                if (progress < 1) requestAnimationFrame(step);
+            }
+            requestAnimationFrame(step);
+        }
+
+        function getFormattedDate() {
+            const now = new Date();
+            const day = String(now.getDate()).padStart(2, '0');
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const year = now.getFullYear();
+            return `${day}-${month}-${year}`;
+        }
+
+        // --- 1. Barcode Scanning Routine Logic ---
+        const routineSchedule = [
+            { date: '06-07-2026', task: 'RTW - Accessories / Shoes' },
+            { date: '14-07-2026', task: 'Fabrics' },
+            { date: '21-07-2026', task: 'RTW - Suits & Jackets' },
+            { date: '28-07-2026', task: 'RTW - Shirts & Trousers / Selected Brand' }
+        ];
+
+        // Dynamic date detection (replaces hardcoded value)
+        const systemCurrentDate = getFormattedDate();
+
+        function renderBarcodeRoutine() {
+            const listContainer = document.getElementById('barcode-routine-list');
+            listContainer.innerHTML = '';
+
+            routineSchedule.forEach((item, index) => {
+                const isActive = item.date === systemCurrentDate;
+                
+                // Style differences for active vs upcoming tasks in the glass UI
+                const containerClasses = isActive 
+                    ? "bg-white/60 p-3 rounded-xl border border-white flex items-center gap-3 shadow-sm transform scale-[1.02] transition-transform" 
+                    : "p-2 flex items-center gap-3 opacity-70 hover:opacity-100 transition-opacity";
+                
+                const dotStyle = isActive 
+                    ? "w-2.5 h-2.5 rounded-full bg-[#f4c74a] shadow-[0_0_8px_rgba(244,199,74,0.8)]" 
+                    : "w-2 h-2 rounded-full bg-neutral-400";
+                
+                const textStyle = isActive 
+                    ? "text-xs font-extrabold text-[#242424]" 
+                    : "text-[11px] font-bold text-neutral-600";
+                    
+                const dateStyle = isActive
+                    ? "text-[9px] font-bold text-[#242424] uppercase tracking-wider"
+                    : "text-[9px] font-bold text-neutral-500 uppercase tracking-wider";
+
+                const html = `
+                    <div class="${containerClasses}">
+                        <div class="flex-shrink-0 flex items-center justify-center w-4 h-4">
+                            <div class="${dotStyle}"></div>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="${dateStyle}">${item.date.replace(/-/g, ' ')}</span>
+                            <span class="${textStyle}">${item.task}</span>
+                        </div>
+                        ${isActive ? '<span class="ml-auto text-[8px] font-black uppercase bg-[#242424] text-[#f4c74a] px-1.5 py-0.5 rounded">Today</span>' : ''}
+                    </div>
+                `;
+                listContainer.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
+        // --- 2. Routing Logic ---
+        function navigateTo(pageId) {
+            const routes = {
+                'quotation': 'quotationMaker.html',
+                'global-count': 'gcMaker.html',
+                'dsrmaker': 'dsrMaker.html'
+            };
+
+            if (routes[pageId]) {
+                document.body.classList.add('page-exit');
+                setTimeout(() => {
+                    window.location.href = routes[pageId];
+                }, 250);
+            } else {
+                showToast(`${pageId.charAt(0).toUpperCase() + pageId.slice(1).replace(/-/g, ' ')} — coming soon`, 'info');
+            }
+        }
+
+        // --- 3. Task Management ---
+        let tasks = [];
+        let editingTaskIndex = -1;
+
+        // Load tasks from localStorage
+        function loadTasks() {
+            const saved = safeGetItem('dailyTasks');
+            if (saved) {
+                tasks = JSON.parse(saved);
+            } else {
+                // Initialize with default tasks
+                tasks = [
+                    { name: 'Review DSR', time: '09:00', completed: true, icon: 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
+                    { name: 'Global Stock-Sync', time: '10:30', completed: true, icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
+                    { name: 'Generate Quotes', time: '14:00', completed: false, icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
+                    { name: 'Barcode Scanning', time: '16:30', completed: false, icon: 'M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1z' }
+                ];
+                saveTasks();
+            }
+            renderTasks();
+        }
+
+        function saveTasks() {
+            safeSetItem('dailyTasks', JSON.stringify(tasks));
+            renderTasks();
+        }
+
+        function renderTasks() {
+            const container = document.getElementById('tasks-container');
+            container.innerHTML = '';
+            
+            const completed = tasks.filter(t => t.completed).length;
+            const total = tasks.length;
+            const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+            
+            document.getElementById('completed-count').textContent = completed;
+            document.getElementById('total-count').textContent = `/${total}`;
+            document.getElementById('tasks-percentage').textContent = `${percentage}%`;
+
+            tasks.forEach((task, index) => {
+                const isCompleted = task.completed;
+                const taskHTML = `
+                    <div class="task-item flex items-center gap-4 group/item ${isCompleted ? '' : 'bg-white/5 p-2 -ml-2 rounded-xl'} transition-colors task-item-hover">
+                        <div class="w-8 h-8 rounded-full ${isCompleted ? 'bg-white/10' : 'bg-white'} flex items-center justify-center flex-shrink-0 ${isCompleted ? 'text-white' : 'text-[#242424]'}">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${task.icon}"></path></svg>
+                        </div>
+                        <div class="flex-grow">
+                            <h4 class="text-xs font-bold ${isCompleted ? 'text-neutral-400 line-through decoration-neutral-500' : 'text-white'}">${escapeHtml(task.name)}</h4>
+                            <p class="text-[9px] ${isCompleted ? 'text-neutral-500' : 'text-[#f4c74a] font-bold'} mt-0.5">${task.time}</p>
+                        </div>
+                        <button onclick="toggleTask(${index})" class="w-5 h-5 rounded-full ${isCompleted ? 'bg-[#f4c74a] text-[#242424]' : 'border-2 border-neutral-500 group-hover:border-[#f4c74a]'} flex items-center justify-center transition-colors flex-shrink-0">
+                            ${isCompleted ? '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>' : ''}
+                        </button>
+                        <button onclick="editTask(${index})" class="action-btn w-5 h-5 flex items-center justify-center text-white hover:text-[#f4c74a] transition-colors flex-shrink-0" title="Edit">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                        </button>
+                        <button onclick="deleteTask(${index})" class="action-btn w-5 h-5 flex items-center justify-center text-white hover:text-red-400 transition-colors flex-shrink-0" title="Delete">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', taskHTML);
+            });
+        }
+
+        function toggleTask(index) {
+            tasks[index].completed = !tasks[index].completed;
+            saveTasks();
+        }
+
+        function editTask(index) {
+            editingTaskIndex = index;
+            document.getElementById('modalTitle').textContent = 'Edit Task';
+            document.getElementById('taskName').value = tasks[index].name;
+            document.getElementById('taskTime').value = tasks[index].time;
+            document.getElementById('taskModal').classList.remove('hidden');
+        }
+
+        function deleteTask(index) {
+            const taskName = tasks[index] ? tasks[index].name : 'Task';
+            if (confirm('Delete this task?')) {
+                tasks.splice(index, 1);
+                saveTasks();
+                showToast(`"${taskName}" removed`, 'info', 2000);
+            }
+        }
+
+        function openAddTaskModal() {
+            editingTaskIndex = -1;
+            document.getElementById('modalTitle').textContent = 'Add New Task';
+            document.getElementById('taskName').value = '';
+            document.getElementById('taskTime').value = '';
+            document.getElementById('taskModal').classList.remove('hidden');
+        }
+
+        function closeTaskModal() {
+            document.getElementById('taskModal').classList.add('hidden');
+        }
+
+        function saveTask() {
+            const name = document.getElementById('taskName').value.trim();
+            const time = document.getElementById('taskTime').value;
+
+            if (!name) {
+                showToast('Please enter a task name', 'warning');
+                return;
+            }
+
+            if (!time) {
+                showToast('Please select a time', 'warning');
+                return;
+            }
+
+            const isEditing = editingTaskIndex >= 0;
+            if (isEditing) {
+                tasks[editingTaskIndex].name = name;
+                tasks[editingTaskIndex].time = time;
+            } else {
+                tasks.push({
+                    name: name,
+                    time: time,
+                    completed: false,
+                    icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
+                });
+            }
+
+            saveTasks();
+            closeTaskModal();
+            showToast(isEditing ? 'Task updated' : 'Task added', 'success', 2000);
+        }
+
+        // Close modal when clicking outside
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('taskModal');
+            if (event.target === modal) {
+                closeTaskModal();
+            }
+        });
+
+        // --- 4. Theme Management ---
+        function loadTheme() {
+            const saved = safeGetItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const isDark = saved ? saved === 'dark' : prefersDark;
+            
+            if (isDark) {
+                document.body.classList.add('dark-mode');
+            } else {
+                document.body.classList.remove('dark-mode');
+            }
+        }
+
+        function toggleTheme() {
+            const isDark = document.body.classList.contains('dark-mode');
+            
+            if (isDark) {
+                document.body.classList.remove('dark-mode');
+                safeSetItem('theme', 'light');
+            } else {
+                document.body.classList.add('dark-mode');
+                safeSetItem('theme', 'dark');
+            }
+        }
+
+        // --- 5. Security Features ---
+        let sessionLocked = false;
+        let inactivityTimeout = null;
+        const INACTIVITY_TIME = 15 * 60 * 1000; // 15 minutes
+
+        // Keyboard shortcuts & refresh prevention
+        document.addEventListener('keydown', function(e) {
+            // Prevent page refresh
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'r' || e.key === 'R')) {
+                e.preventDefault();
+                showToast('Page refresh is disabled to protect your data', 'warning');
+                return false;
+            }
+            if (e.key === 'F5') {
+                e.preventDefault();
+                showToast('Page refresh is disabled to protect your data', 'warning');
+                return false;
+            }
+            // Escape closes modals
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('taskModal');
+                if (modal && !modal.classList.contains('hidden')) {
+                    closeTaskModal();
+                }
+            }
+            // Enter submits task form when focused
+            if (e.key === 'Enter' && document.activeElement) {
+                const modal = document.getElementById('taskModal');
+                if (modal && !modal.classList.contains('hidden')) {
+                    if (document.activeElement.id === 'taskName' || document.activeElement.id === 'taskTime') {
+                        e.preventDefault();
+                        saveTask();
+                    }
+                }
+            }
+        });
+
+        // Warn before closing tab/window
+        window.addEventListener('beforeunload', function(e) {
+            e.preventDefault();
+            e.returnValue = '';
+            return '';
+        });
+
+        // Session lock with inactivity detection
+        function resetInactivityTimer() {
+            if (sessionLocked) return; // Don't reset if already locked
+            
+            clearTimeout(inactivityTimeout);
+            inactivityTimeout = setTimeout(() => {
+                lockSession();
+            }, INACTIVITY_TIME);
+        }
+
+        function lockSession() {
+            sessionLocked = true;
+            document.getElementById('lockOverlay').classList.remove('hidden');
+            document.body.style.overflow = 'hidden'; // Prevent scrolling
+            console.warn('🔒 Session locked due to inactivity');
+        }
+
+        function unlockSession() {
+            sessionLocked = false;
+            document.getElementById('lockOverlay').classList.add('hidden');
+            document.body.style.overflow = 'auto'; // Re-enable scrolling
+            resetInactivityTimer();
+            console.log('🔓 Session unlocked');
+        }
+
+        // Track user activity for session lock (mousemove debounced for performance)
+        const debouncedResetTimer = debounce(resetInactivityTimer, 1000);
+        document.addEventListener('click', resetInactivityTimer);
+        document.addEventListener('keypress', resetInactivityTimer);
+        document.addEventListener('mousemove', debouncedResetTimer);
+        document.addEventListener('touchstart', resetInactivityTimer);
+
+        // Prevent interaction when locked
+        document.addEventListener('click', function(e) {
+            if (sessionLocked && e.target.id !== 'lockOverlay' && !e.target.closest('.lock-modal')) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        }, true);
+
+        // Initialize dynamic elements on load
+        window.onload = function() {
+            loadTheme();
+            updateGreeting();
+            updateClock();
+            setInterval(updateClock, 60000);
+            renderBarcodeRoutine();
+            loadTasks();
+            resetInactivityTimer();
+
+            // Animate KPI counters on load
+            requestAnimationFrame(() => {
+                const pendingEl = document.getElementById('kpi-pending');
+                const completedEl = document.getElementById('kpi-completed');
+                if (pendingEl) animateCounter(pendingEl, 12, 1000);
+                if (completedEl) animateCounter(completedEl, 84, 1200);
+            });
+        };
+    </script>
+</body>
+</html>
