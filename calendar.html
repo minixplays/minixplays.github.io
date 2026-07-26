@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendar - Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            opacity: 0;
+            animation: pageEnter 0.4s ease-out forwards;
+        }
+
+        @keyframes pageEnter {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        body.page-exit {
+            animation: pageExit 0.25s ease-in forwards;
+        }
+
+        @keyframes pageExit {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-10px); }
+        }
+
+        .theme-bg {
+            background: linear-gradient(135deg, #fefbf6 0%, #fdf5e1 50%, #fae5ac 100%);
+            min-height: 100vh;
+        }
+
+        .dashboard-container {
+            background: rgba(255, 255, 255, 0.4);
+            box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .pill-nav-active {
+            background: #242424;
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .pill-nav {
+            color: #525252;
+            transition: all 0.2s;
+        }
+
+        .pill-nav:hover {
+            background: rgba(36, 36, 36, 0.05);
+            color: #242424;
+        }
+
+        /* Calendar specific styles */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 12px;
+        }
+
+        .calendar-day {
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 1rem;
+            min-height: 140px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+        }
+
+        .calendar-day:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 15px 30px -10px rgba(0,0,0,0.1);
+            background: rgba(255, 255, 255, 0.9);
+            z-index: 10;
+        }
+
+        .calendar-day.calendar-day-week {
+            min-height: 350px;
+        }
+
+        .calendar-day.today {
+            background: linear-gradient(135deg, #ffffff 0%, #fffcf2 100%);
+            border: 2px solid #f4c74a;
+            box-shadow: 0 10px 25px -5px rgba(244, 199, 74, 0.3);
+        }
+
+        .calendar-day.empty {
+            background: transparent;
+            border: none;
+            pointer-events: none;
+        }
+
+        .date-num {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: #242424;
+            margin-bottom: 8px;
+        }
+
+        .today .date-num {
+            color: #b4850c;
+        }
+        
+        .event-badge {
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 6px;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .event-yellow { background: #fef0c7; color: #936b0c; border: 1px solid #fce39f; }
+        .event-blue { background: #e0f2fe; color: #075985; border: 1px solid #bae6fd; }
+        .event-gray { background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; }
+        .event-red { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+
+        .side-panel {
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+        
+        .glass-btn {
+            background: rgba(255,255,255,0.7);
+            border: 1px solid white;
+            transition: all 0.2s;
+        }
+        
+        .glass-btn:hover {
+            background: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+    </style>
+</head>
+
+<body class="theme-bg p-2 sm:p-4 md:p-6 lg:p-8 text-[#242424]">
+
+    <div class="dashboard-container rounded-[2.5rem] sm:rounded-[3rem] p-4 sm:p-8 md:p-10 border border-neutral-200 min-h-[92vh] flex flex-col">
+
+        <!-- Header (Same as Dashboard) -->
+        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-6 w-full">
+            <div class="flex items-center gap-3 bg-white px-5 py-2.5 rounded-full shadow-sm border border-neutral-100/50 cursor-pointer" onclick="navigateTo('index')">
+                <div class="w-8 h-8 rounded-full bg-[#f4c74a] flex items-center justify-center text-[#242424] font-extrabold text-sm shadow-inner">
+                    PNR
+                </div>
+                <span class="font-extrabold text-lg tracking-tight">Manager</span>
+            </div>
+
+            <!-- Navigation -->
+            <div class="flex items-center overflow-x-auto w-full lg:w-auto bg-white/60 backdrop-blur-md p-1.5 rounded-full border border-white shadow-[0_4px_20px_rgba(0,0,0,0.02)] hide-scrollbar">
+                <button class="pill-nav px-6 py-2 rounded-full text-xs font-bold whitespace-nowrap" onclick="navigateTo('index')">Dashboard</button>
+                <button class="pill-nav px-6 py-2 rounded-full text-xs font-bold whitespace-nowrap" onclick="navigateTo('index')">Tools</button>
+                <button class="pill-nav px-6 py-2 rounded-full text-xs font-bold whitespace-nowrap">Reports</button>
+                <button class="pill-nav-active px-6 py-2 rounded-full text-xs font-bold whitespace-nowrap">Calendar</button>
+            </div>
+
+            <!-- Right Profile -->
+            <div class="flex items-center gap-2">
+                <button class="w-10 h-10 rounded-full bg-white border border-neutral-100 flex items-center justify-center text-neutral-500 hover:text-[#242424] hover:bg-neutral-50 transition shadow-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                </button>
+                <div class="w-10 h-10 rounded-full bg-neutral-200 border-2 border-white shadow-sm overflow-hidden">
+                    <img src="https://ui-avatars.com/api/?name=Admin&background=242424&color=fff" alt="Profile" class="w-full h-full object-cover">
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col xl:flex-row gap-8">
+            
+            <!-- Left Side: Calendar Grid -->
+            <div class="flex-1 flex flex-col">
+                <!-- Calendar Toolbar -->
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center gap-4">
+                        <h1 class="text-3xl font-extrabold tracking-tight" id="currentMonthYear">July 2026</h1>
+                        <div class="flex bg-white/60 backdrop-blur-md rounded-full p-1 border border-white shadow-sm">
+                            <button id="viewMonthBtn" class="pill-nav-active px-4 py-1.5 rounded-full text-xs font-bold" onclick="setView('month')">Month</button>
+                            <button id="viewWeekBtn" class="pill-nav px-4 py-1.5 rounded-full text-xs font-bold" onclick="setView('week')">Week</button>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button class="glass-btn px-4 py-2 rounded-full text-sm font-bold shadow-sm" onclick="renderCalendar(-1)">
+                            &larr; Prev
+                        </button>
+                        <button class="glass-btn px-4 py-2 rounded-full text-sm font-bold shadow-sm" onclick="resetCalendar()">
+                            Today
+                        </button>
+                        <button class="glass-btn px-4 py-2 rounded-full text-sm font-bold shadow-sm" onclick="renderCalendar(1)">
+                            Next &rarr;
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Days Header -->
+                <div class="calendar-grid mb-3">
+                    <div class="text-xs font-extrabold text-neutral-400 uppercase tracking-widest text-center">Sun</div>
+                    <div class="text-xs font-extrabold text-neutral-400 uppercase tracking-widest text-center">Mon</div>
+                    <div class="text-xs font-extrabold text-neutral-400 uppercase tracking-widest text-center">Tue</div>
+                    <div class="text-xs font-extrabold text-neutral-400 uppercase tracking-widest text-center">Wed</div>
+                    <div class="text-xs font-extrabold text-neutral-400 uppercase tracking-widest text-center">Thu</div>
+                    <div class="text-xs font-extrabold text-neutral-400 uppercase tracking-widest text-center">Fri</div>
+                    <div class="text-xs font-extrabold text-neutral-400 uppercase tracking-widest text-center">Sat</div>
+                </div>
+
+                <!-- Calendar Days -->
+                <div class="calendar-grid flex-1 pb-4" id="calendarDays">
+                    <!-- JS Injected Days -->
+                </div>
+            </div>
+
+            <!-- Right Side: Events Panel -->
+            <div class="w-full xl:w-80 side-panel flex flex-col gap-6">
+                <div>
+                    <h2 class="text-lg font-extrabold mb-4 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-[#f4c74a]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        Upcoming Events
+                    </h2>
+                    <div class="flex flex-col gap-3" id="upcomingEventsList">
+                        <!-- JS Injected Events -->
+                    </div>
+                </div>
+
+                <div class="mt-auto">
+                    <button class="w-full bg-[#242424] text-white font-bold py-3 px-4 rounded-xl shadow-lg hover:bg-black transition-colors flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        New Event
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function navigateTo(pageId) {
+            document.body.classList.add('page-exit');
+            setTimeout(() => {
+                if (pageId === 'index') {
+                    window.location.href = 'index.html';
+                } else {
+                    window.location.href = pageId + '.html'; // simple fallback
+                }
+            }, 250);
+        }
+
+        // Calendar Logic
+        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        
+        let currentDate = new Date(); // Start with current actual date
+        
+        // Store events mapped by YYYY-MM-DD
+        const eventsData = {};
+
+        function parseTailoringDate(str) {
+            if (!str || str.toLowerCase() === 'null') return null;
+            const parts = str.split('-');
+            if (parts.length === 3) {
+                if (parts[1].length === 3) {
+                    const months = { 'jan': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'may': 4, 'jun': 5, 'jul': 6, 'aug': 7, 'sep': 8, 'oct': 9, 'nov': 10, 'dec': 11 };
+                    const day = parseInt(parts[0]);
+                    const month = months[parts[1].toLowerCase()];
+                    let year = parseInt(parts[2]);
+                    if (year < 100) year += 2000;
+                    return new Date(year, month, day);
+                }
+                return new Date(str);
+            }
+            return new Date(str);
+        }
+
+        function loadTailoringEvents() {
+            try {
+                const saved = localStorage.getItem('tailoring_orders');
+                if (saved) {
+                    const orders = JSON.parse(saved);
+                    orders.forEach(o => {
+                        // Trial Date
+                        if (o.trailDate && o.trailDate !== 'null') {
+                            const td = parseTailoringDate(o.trailDate);
+                            if (td && !isNaN(td)) {
+                                const key = formatDateKey(td.getFullYear(), td.getMonth(), td.getDate());
+                                if (!eventsData[key]) eventsData[key] = [];
+                                eventsData[key].push({
+                                    title: 'Trial: ' + o.orderNo,
+                                    type: 'event-blue',
+                                    rawDate: td,
+                                    sideBarType: 'bg-blue-100 text-blue-800'
+                                });
+                            }
+                        }
+                        // Delivery Date
+                        if (o.deliveryDate && o.deliveryDate !== 'null') {
+                            const dd = parseTailoringDate(o.deliveryDate);
+                            if (dd && !isNaN(dd)) {
+                                const key = formatDateKey(dd.getFullYear(), dd.getMonth(), dd.getDate());
+                                if (!eventsData[key]) eventsData[key] = [];
+                                eventsData[key].push({
+                                    title: 'Delivery: ' + o.orderNo,
+                                    type: 'event-red',
+                                    rawDate: dd,
+                                    sideBarType: 'bg-red-100 text-red-800'
+                                });
+                            }
+                        }
+                    });
+                }
+            } catch (e) { console.error("Error loading tailoring events", e); }
+        }
+        
+        loadTailoringEvents();
+
+        function formatDateKey(year, month, day) {
+            return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        }
+
+        const DEFAULT_STORE_ROUTINE = [
+            { dayId: 'Mon', day: 'M', label: 'Stock Take & Scanning', weight: 70, type: 'event-blue' },
+            { dayId: 'Tue', day: 'T', label: 'VM', weight: 60, type: 'event-gray' },
+            { dayId: 'Wed', day: 'W', label: 'Working Day', weight: 100, type: 'event-yellow' },
+            { dayId: 'Thu', day: 'T', label: 'Working Day', weight: 50, type: 'event-yellow' },
+            { dayId: 'Fri', day: 'F', label: 'Delivery Tracking', weight: 80, type: 'event-blue' },
+            { dayId: 'Sat', day: 'S', label: 'Peak Sales Support', weight: 30, type: 'event-red' },
+            { dayId: 'Sun', day: 'Su', label: 'Peak Sales Support', weight: 30, type: 'event-red' }
+        ];
+
+        function loadStoreRoutine() {
+            try {
+                const saved = localStorage.getItem('storeWeeklyRoutine');
+                if (saved) return JSON.parse(saved);
+            } catch(e) { console.error('Error loading routine', e); }
+            return JSON.parse(JSON.stringify(DEFAULT_STORE_ROUTINE));
+        }
+
+        const routineData = loadStoreRoutine();
+        const storeWeeklyTasks = [
+            routineData[6], // Sun
+            routineData[0], // Mon
+            routineData[1], // Tue
+            routineData[2], // Wed
+            routineData[3], // Thu
+            routineData[4], // Fri
+            routineData[5]  // Sat
+        ];
+
+        let currentView = 'month';
+
+        function setView(view) {
+            currentView = view;
+            document.getElementById('viewMonthBtn').className = view === 'month' ? 'pill-nav-active px-4 py-1.5 rounded-full text-xs font-bold' : 'pill-nav px-4 py-1.5 rounded-full text-xs font-bold';
+            document.getElementById('viewWeekBtn').className = view === 'week' ? 'pill-nav-active px-4 py-1.5 rounded-full text-xs font-bold' : 'pill-nav px-4 py-1.5 rounded-full text-xs font-bold';
+            renderCalendar(0);
+        }
+
+        function renderCalendar(offset = 0) {
+            const today = new Date(); // Always strictly today
+            
+            if (currentView === 'month') {
+                currentDate.setMonth(currentDate.getMonth() + offset);
+            } else {
+                currentDate.setDate(currentDate.getDate() + (offset * 7));
+            }
+            
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+
+            document.getElementById('currentMonthYear').textContent = currentView === 'month' 
+                ? `${monthNames[month]} ${year}`
+                : `Week of ${monthNames[month]} ${currentDate.getDate()}, ${year}`;
+
+            const grid = document.getElementById('calendarDays');
+            grid.innerHTML = '';
+
+            if (currentView === 'month') {
+                const firstDay = new Date(year, month, 1).getDay();
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+                // Empty slots for previous month
+                for (let i = 0; i < firstDay; i++) {
+                    grid.innerHTML += `<div class="calendar-day empty"></div>`;
+                }
+
+                // Days of the month
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const dateObj = new Date(year, month, day);
+                    const dayOfWeek = dateObj.getDay();
+                    const isToday = (day === today.getDate() && month === today.getMonth() && year === today.getFullYear());
+                    const dateKey = formatDateKey(year, month, day);
+                    const dayEvents = eventsData[dateKey] || [];
+                    
+                    let eventsHtml = dayEvents.map(e => `<div class="event-badge ${e.type}">${e.title}</div>`).join('');
+                    grid.innerHTML += `
+                        <div class="calendar-day ${isToday ? 'today' : ''} cursor-pointer group">
+                            <div class="date-num">${day}</div>
+                            <div class="flex-1 flex flex-col gap-1 overflow-y-auto hide-scrollbar">
+                                ${eventsHtml}
+                            </div>
+                        </div>
+                    `;
+                }
+            } else {
+                // Week view
+                const currentDayOfWeek = currentDate.getDay();
+                const sundayDate = new Date(currentDate);
+                sundayDate.setDate(currentDate.getDate() - currentDayOfWeek);
+                
+                for (let i = 0; i < 7; i++) {
+                    const dateObj = new Date(sundayDate);
+                    dateObj.setDate(sundayDate.getDate() + i);
+                    
+                    const dYear = dateObj.getFullYear();
+                    const dMonth = dateObj.getMonth();
+                    const dDay = dateObj.getDate();
+                    
+                    const isToday = (dDay === today.getDate() && dMonth === today.getMonth() && dYear === today.getFullYear());
+                    const dateKey = formatDateKey(dYear, dMonth, dDay);
+                    const dayEvents = eventsData[dateKey] || [];
+                    
+                    let eventsHtml = dayEvents.map(e => `<div class="event-badge ${e.type} text-xs py-1 px-2 mb-2">${e.title}</div>`).join('');
+                    grid.innerHTML += `
+                        <div class="calendar-day calendar-day-week ${isToday ? 'today' : ''} cursor-pointer group">
+                            <div class="date-num text-lg">${dDay} <span class="text-xs font-normal text-neutral-500">${monthNames[dMonth].substring(0,3)}</span></div>
+                            <div class="flex-1 flex flex-col gap-1 overflow-y-auto hide-scrollbar mt-2">
+                                ${eventsHtml}
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+            
+            renderUpcomingEvents();
+        }
+
+        function resetCalendar() {
+            currentDate = new Date();
+            renderCalendar(0);
+        }
+
+        function renderUpcomingEvents() {
+            const list = document.getElementById('upcomingEventsList');
+            list.innerHTML = '';
+            
+            let upcoming = [];
+            const today = new Date();
+            today.setHours(0,0,0,0);
+
+            // Flatten all events from eventsData
+            Object.keys(eventsData).forEach(key => {
+                const dayEvents = eventsData[key];
+                dayEvents.forEach(ev => {
+                    if (ev.rawDate >= today) {
+                        upcoming.push(ev);
+                    }
+                });
+            });
+
+            // Sort ascending by date
+            upcoming.sort((a, b) => a.rawDate - b.rawDate);
+            
+            // Limit to top 6
+            upcoming = upcoming.slice(0, 6);
+
+            if (upcoming.length === 0) {
+                list.innerHTML = '<div class="text-center text-neutral-400 font-bold text-sm py-8 border border-dashed rounded-xl border-neutral-200">No upcoming items found!</div>';
+            }
+
+            upcoming.forEach(ev => {
+                const d = ev.rawDate;
+                const isToday = (d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear());
+                
+                let dateBadgeStr = '';
+                if (isToday) {
+                    dateBadgeStr = '<span class="text-[9px] uppercase opacity-80">TODAY</span>';
+                } else {
+                    dateBadgeStr = `
+                        <span class="text-[9px] uppercase opacity-80">${monthNames[d.getMonth()].substring(0,3)}</span>
+                        <span class="text-xs">${String(d.getDate()).padStart(2, '0')}</span>
+                    `;
+                }
+
+                list.innerHTML += `
+                    <div class="p-3 bg-white rounded-xl shadow-sm border border-neutral-100 flex items-start gap-3 hover:-translate-y-0.5 transition-transform cursor-pointer">
+                        <div class="w-10 h-10 rounded-lg flex flex-col items-center justify-center ${ev.sideBarType} font-bold leading-tight">
+                            ${dateBadgeStr}
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-sm text-[#242424]">${ev.title}</h4>
+                            <p class="text-xs font-semibold text-neutral-400 mt-0.5">Automated Tailoring Task</p>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            renderCalendar(0);
+        });
+    </script>
+    <script src="notifications.js"></script>
+</body>
+</html>
